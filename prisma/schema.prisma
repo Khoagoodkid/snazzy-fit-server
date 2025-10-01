@@ -11,8 +11,6 @@ model User {
   id                    String    @id @default(uuid()) @db.Char(36)
   name                  String    @db.VarChar(255)
   email                 String    @unique(map: "email") @db.VarChar(255)
-  facebook_id           String?   @unique(map: "facebook_id") @db.VarChar(255)
-  facebook_access_token String?   @db.Text
   password              String?   @default("") @db.VarChar(255)
   phone                 String?   @db.VarChar(20)
   address               String?   @db.Text
@@ -38,4 +36,14 @@ model User {
   lock_until            BigInt?
 
   @@map("users")
+}
+
+model Token {
+  id                    String    @id @default(uuid()) @db.Char(36)
+  token                 String    @db.VarChar(255)
+  user_id               String    @db.VarChar(36)
+  expires_at            BigInt?
+  type                  String    @db.VarChar(255)
+
+  @@map("tokens")
 }

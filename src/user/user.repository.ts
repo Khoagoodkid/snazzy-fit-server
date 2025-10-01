@@ -9,7 +9,11 @@ export class UserRepository {
     constructor(private readonly prisma: PrismaService) { }
 
     async findUserByEmail(email: string) {
-        return null;
+        return this.prisma.user.findUnique({
+            where: {
+                email: email
+            }
+        })
     }
 
     async create(user: CreateUserDto, verify_token: string) {

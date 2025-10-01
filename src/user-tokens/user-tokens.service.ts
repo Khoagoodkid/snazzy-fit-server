@@ -5,7 +5,7 @@ import { UserTokensRepository } from "./user-tokens.repository";
 export class UserTokensService {
     constructor(private readonly userTokensRepository: UserTokensRepository) {}
 
-    async insertToken(user_id: string, token: string, expires_at: string, type: string) {
+    async insertToken(user_id: string, token: string, expires_at: number, type: string) {
         try {
             return this.userTokensRepository.insertToken(user_id, token, expires_at, type);
         } catch (error) {

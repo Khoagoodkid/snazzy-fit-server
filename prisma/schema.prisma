@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    String    @id @db.Char(36)
+  name                  String    @db.VarChar(255)
+  email                 String    @unique(map: "email") @db.VarChar(255)
+  facebook_id           String?   @unique(map: "facebook_id") @db.VarChar(255)
+  facebook_access_token String?   @db.Text
+  password              String?   @default("") @db.VarChar(255)
+  phone                 String?   @db.VarChar(20)
+  address               String?   @db.Text
+  language_id           Int?
+  provider              String?   @db.VarChar(50)
+  google_id             String?   @db.VarChar(255)
+  is_verified           Int?      @default(0)
+  avatar                String?   @db.Text
+  is_onboard            Boolean?  @default(false)
+  blog_id               String?   @db.Char(36)
+  last_receive_message  DateTime? @db.Timestamp(0)
+  last_active           DateTime? @db.Timestamp(0)
+  is_email_subscribed   Boolean?  @default(false)
+  is_password_set       Boolean?  @default(false)
+  status                Int       @default(1) @db.TinyInt
+  created_at            BigInt?
+  updated_at            BigInt?
+  deleted_at            BigInt?
+  otp_code              String?   @db.VarChar(10)
+  otp_expires_at        BigInt?
+  verify_token          String?   @db.VarChar(255)
+  failed_attempts       Int?      @default(0)
+  lock_until            BigInt?
+
+  @@map("users")
+}

@@ -1,0 +1,46 @@
+/*
+  Warnings:
+
+  - You are about to drop the `user` table. If the table is not empty, all the data it contains will be lost.
+
+*/
+-- DropTable
+DROP TABLE `user`;
+
+-- CreateTable
+CREATE TABLE `Users` (
+    `id` CHAR(36) NOT NULL,
+    `name` VARCHAR(255) NOT NULL,
+    `email` VARCHAR(255) NOT NULL,
+    `role` VARCHAR(255) NOT NULL,
+    `facebook_id` VARCHAR(255) NULL,
+    `facebook_access_token` TEXT NULL,
+    `password` VARCHAR(255) NULL DEFAULT '',
+    `phone` VARCHAR(20) NULL,
+    `address` TEXT NULL,
+    `language_id` INTEGER NULL,
+    `provider` VARCHAR(50) NULL,
+    `google_id` VARCHAR(255) NULL,
+    `apple_id` VARCHAR(255) NULL,
+    `is_verified` INTEGER NULL DEFAULT 0,
+    `avatar` TEXT NULL,
+    `is_onboard` BOOLEAN NULL DEFAULT false,
+    `blog_id` CHAR(36) NULL,
+    `last_receive_message` TIMESTAMP(0) NULL,
+    `last_active` TIMESTAMP(0) NULL,
+    `is_email_subscribed` BOOLEAN NULL DEFAULT false,
+    `is_password_set` BOOLEAN NULL DEFAULT false,
+    `status` TINYINT NOT NULL DEFAULT 1,
+    `created_at` BIGINT NULL,
+    `updated_at` BIGINT NULL,
+    `deleted_at` BIGINT NULL,
+    `otp_code` VARCHAR(10) NULL,
+    `otp_expires_at` BIGINT NULL,
+    `verify_token` VARCHAR(255) NULL,
+    `failed_attempts` INTEGER NULL DEFAULT 0,
+    `lock_until` BIGINT NULL,
+
+    UNIQUE INDEX `email`(`email`),
+    UNIQUE INDEX `facebook_id`(`facebook_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

@@ -5,7 +5,7 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import { setupSwagger } from './constants/swagger.config';
+import { setupSwagger } from './config/swagger.config';
 import { CustomValidationPipe } from './core/custom-validation';
 import * as fastifyCookie from '@fastify/cookie';
 import multipart from '@fastify/multipart';

@@ -84,10 +84,7 @@ export class AuthService {
 
         // remove sensitive fields
         const sanitizedUser = SanitizeDataService.sanitizeUser(user);
-        return {
-            user: sanitizedUser,
-
-        };
+        return sanitizedUser;
 
 
     }

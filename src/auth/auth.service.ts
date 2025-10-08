@@ -10,8 +10,13 @@ import { JwtService } from "@nestjs/jwt";
 import { TimeService } from "src/utils/time.service";
 import { UserTokensService } from "src/user-tokens/user-tokens.service";
 import { ConfigService } from "@nestjs/config";
-import { FastifyReply } from "fastify";
+import { FastifyReply, FastifyRequest } from "fastify";
 import { SanitizeDataService } from "src/utils/sanitize-data.service";
+import * as jwt from 'jsonwebtoken';
+import { GoogleService } from "src/google/google.service";
+import { User } from "@prisma/client";
+import { SendMailService } from "src/send-mail/send-mail.service";
+import { ChangePasswordDto } from "./dto/change-password.dto";
 
 @Injectable()
 export class AuthService {
@@ -22,7 +27,9 @@ export class AuthService {
         private readonly jwtService: JwtService,
         private readonly userTokensService: UserTokensService,
         private readonly configService: ConfigService,
-        private readonly sanitizeDataService: SanitizeDataService
+        private readonly sanitizeDataService: SanitizeDataService,
+        private readonly googleService: GoogleService,
+        private readonly sendMailService: SendMailService,
     ) { }
 
     private async generateToken(user: any, secret: string, expiresIn: string, type: string) {
@@ -44,7 +51,7 @@ export class AuthService {
         // return this.userService.login(email, password);
         const user = await this.userService.findUserByEmail(loginDto.email);
         if (!user) {
-            throw new BusinessLogicError("User not found");
+            throw new BusinessLogicError("User not found", 401);
         }
 
         const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
@@ -73,6 +80,7 @@ export class AuthService {
             secure: true,
             maxAge: accessToken.expiresAt,
             sameSite: 'strict',
+            path: '/',
         });
 
         reply.setCookie('refresh_token', refreshToken.token, {
@@ -80,6 +88,7 @@ export class AuthService {
             secure: true,
             maxAge: refreshToken.expiresAt,
             sameSite: 'strict',
+            path: '/',
         });
 
         // remove sensitive fields
@@ -114,9 +123,197 @@ export class AuthService {
         }
 
         try {
+            const verifyLink = this.configService.get<string>('CLIENT_BASE_URL') + "/verify-email?verify_token=" + verify_token;
+            await this.sendMailService.sendWelcomeMail([user.email], user.username, verifyLink);
+            console.log("Email sent successfully");
+
             return this.userService.createUser(userData, verify_token);
         } catch (error) {
             throw new BusinessLogicError("Failed to create user");
         }
+    }
+
+    async logout(req: FastifyRequest, reply: FastifyReply) {
+        const access_token = req.cookies.access_token;
+        const refresh_token = req.cookies.refresh_token;
+
+        if (!access_token || !refresh_token) {
+            throw new BusinessLogicError("Token not found");
+        }
+        try {
+            reply.clearCookie("access_token");
+            reply.clearCookie("refresh_token");
+
+            return {};
+        } catch (error) {
+            throw new BusinessLogicError("Failed to log out");
+        }
+    }
+
+    async refreshToken(refreshToken: string | undefined, reply: FastifyReply) {
+        const refreshTokenSecret = this.configService.get<string>('REFRESH_TOKEN_SECRET') || "secret";
+        if (!refreshToken) {
+            throw new BusinessLogicError("Refresh token not found");
+        }
+
+        let decode;
+        try {
+            decode = jwt.verify(refreshToken, refreshTokenSecret);
+        } catch (error) {
+            throw new BusinessLogicError("Invalid refresh token");
+        }
+
+        const user = await this.userService.findUserByEmail(decode.email);
+        if (!user) {
+            throw new BusinessLogicError("User not found");
+        }
+
+        if (Number(decode.expires_at) < TimeService.currentUnix()) {
+            throw new BusinessLogicError("Refresh token expired");
+        }
+
+        const accessSecret = this.configService.get<string>('ACCESS_TOKEN_SECRET') || "secret";
+        const accessExpiresIn = this.configService.get<string>('ACCESS_TOKEN_EXPIRES_IN') || "15m";
+
+        const accessToken = await this.generateToken(user, accessSecret, accessExpiresIn, 'accessToken');
+        reply.setCookie('access_token', accessToken.token, {
+            httpOnly: true,
+            secure: true,
+            maxAge: accessToken.expiresAt,
+            sameSite: 'strict',
+            path: '/',
+        });
+
+        return {};
+
+    }
+
+    async handleGoogleCallback(code: string, reply: FastifyReply) {
+        if (!code) {
+            throw new Error('Authorization code is required');
+        }
+
+        try {
+            const tokens = await this.googleService.getTokens(code);
+            console.log("Tokens received:", tokens);
+
+            const userInfo = await this.googleService.getUserInfo(tokens);
+
+
+
+            const user = await this.userService.findUserByEmail(userInfo.data.email as string);
+
+            let userData: User;
+
+            if (!user) {
+                userData = await this.userService.createGoogleUser(userInfo.data.email as string, userInfo.data.name as string, userInfo.data.picture as string, userInfo.data.id as string);
+
+            } else {
+                userData = user;
+            }
+
+            const accessSecret = this.configService.get<string>('ACCESS_TOKEN_SECRET') || "secret";
+            const refreshSecret = this.configService.get<string>('REFRESH_TOKEN_SECRET') || "secret";
+            const accessExpiresIn = this.configService.get<string>('ACCESS_TOKEN_EXPIRES_IN') || "15m";
+            const refreshExpiresIn = this.configService.get<string>('REFRESH_TOKEN_EXPIRES_IN') || "7d";
+
+            const accessToken = await this.generateToken(userData, accessSecret, accessExpiresIn, 'accessToken');
+            const refreshToken = await this.generateToken(userData, refreshSecret, refreshExpiresIn, 'refreshToken');
+
+            reply.setCookie('access_token', accessToken.token, {
+                httpOnly: true,
+                secure: true,
+                maxAge: accessToken.expiresAt,
+                sameSite: 'strict',
+                path: '/',
+            });
+
+            reply.setCookie('refresh_token', refreshToken.token, {
+                httpOnly: true,
+                secure: true,
+                maxAge: refreshToken.expiresAt,
+                sameSite: 'strict',
+                path: '/',
+            });
+
+            if (tokens.refresh_token) {
+                reply.setCookie('google_refresh_token', tokens.refresh_token, {
+                    httpOnly: true,
+                    secure: true,
+                    maxAge: tokens.expiry_date ? tokens.expiry_date - Date.now() : 3600000,
+                    sameSite: 'strict',
+                    path: '/',
+                });
+            }
+            return {
+                data: userData,
+                url: this.configService.get<string>('CLIENT_BASE_URL') + "/oauth/google-callback"
+            };
+        } catch (error) {
+            console.error("Error getting tokens:", error);
+            throw new Error('Failed to exchange authorization code for tokens');
+        }
+    }
+
+    async getUserById(id: string) {
+        try {
+            const user = await this.userService.findUserById(id);
+            if (!user) {
+                throw new BusinessLogicError("User not found");
+            }
+            return SanitizeDataService.sanitizeUser(user);
+        } catch (error) {
+            throw new BusinessLogicError("Failed to get user");
+        }
+    }
+
+    async verifyEmail(verify_token: string) {
+        const user = await this.userService.findUser({ verify_token });
+        if (!user) {
+            throw new BusinessLogicError("User not found");
+        }
+
+        if(user.is_verified === 1) {
+            throw new BusinessLogicError("Email already verified");
+        }
+
+        if(user.verify_token !== verify_token) {
+            throw new BusinessLogicError("Invalid verify token");
+        }
+
+        await this.userService.updateUser({ id: user.id }, { is_verified: 1, verify_token: null });
+
+        return user;
+    }
+
+    async changePasswordRequest(email: string) {
+        const user = await this.userService.findUserByEmail(email);
+        if (!user) {
+            throw new BusinessLogicError("User not found");
+        }
+
+        const changePasswordToken = await this.hashService.generateVerfiyToken();
+        await this.userService.updateUser({ id: user.id }, { change_password_token: changePasswordToken });
+        const changePasswordLink = this.configService.get<string>('CLIENT_BASE_URL') + "/reset-password?token=" + changePasswordToken;
+        await this.sendMailService.sendChangePasswordMail([email], user.name, changePasswordLink);
+        return user;
+    }
+
+    async changePassword(changePasswordDto: ChangePasswordDto) {
+        const user = await this.userService.findUser({ change_password_token: changePasswordDto.token });
+        if (!user) {
+            throw new BusinessLogicError("Invalid token");
+        }
+
+        const isSameWithOldPassword = await bcrypt.compare(changePasswordDto.password, user.password);
+        if(isSameWithOldPassword) {
+            throw new BusinessLogicError("New password cannot be the same as the old password");
+        }
+
+        const hashedPassword = await this.passwordService.hashPassword(changePasswordDto.password);
+
+        await this.userService.updateUser({ id: user.id }, { password: hashedPassword, change_password_token: null });
+
+        return user;
     }
 }

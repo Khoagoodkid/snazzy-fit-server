@@ -29,21 +29,113 @@ model User {
   created_at            BigInt?
   updated_at            BigInt?
   deleted_at            BigInt?
+  change_password_token String?   @db.VarChar(255)
   otp_code              String?   @db.VarChar(10)
   otp_expires_at        BigInt?
   verify_token          String?   @db.VarChar(255)
   failed_attempts       Int?      @default(0)
   lock_until            BigInt?
+  cart                  Cart[]
 
   @@map("users")
 }
 
 model Token {
-  id                    String    @id @default(uuid()) @db.Char(36)
-  token                 String    @db.VarChar(255)
-  user_id               String    @db.VarChar(36)
-  expires_at            BigInt?
-  type                  String    @db.VarChar(255)
+  id         String  @id @default(uuid()) @db.Char(36)
+  token      String  @db.VarChar(255)
+  user_id    String  @db.VarChar(36)
+  expires_at BigInt?
+  type       String  @db.VarChar(255)
 
   @@map("tokens")
+}
+
+model Product {
+  id            String     @id @default(uuid()) @db.Char(36)
+  name          String
+  slug          String     @unique
+  description   String?
+  brand         String?
+  basePrice     Float
+  collection    Collection @relation(fields: [collection_id], references: [id], onDelete: Cascade)
+  collection_id String
+  category      Category   @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  category_id   String
+  discount      Float      @default(0)
+  currency      String     @default("USD")
+  mainImage     String?
+  images        Json?
+  isFeatured    Boolean    @default(false)
+  isActive      Boolean    @default(true)
+  tags          Json
+  ratingAvg     Float      @default(0)
+  ratingCount   Int        @default(0)
+  variants      Variant[]
+  created_at    BigInt?
+  updated_at    BigInt?
+
+  @@index([collection_id])
+  @@index([category_id])
+  @@index([slug])
+  @@index([isFeatured])
+  @@map("products")
+}
+
+model Variant {
+  id         String      @id @default(uuid()) @db.Char(36)
+  color      String
+  size       VariantSize
+  price      Float
+  stock      Int
+  images     Json?
+  product    Product     @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  carts      Cart[]
+  product_id String
+  created_at BigInt?
+  updated_at BigInt?
+
+  @@index([product_id])
+  @@map("variants")
+}
+
+enum VariantSize {
+  S
+  M
+  L
+  XL
+}
+
+model Category {
+  id         String    @id @default(uuid()) @db.Char(36)
+  name       String    @unique
+  created_at BigInt?
+  updated_at BigInt?
+  products   Product[]
+
+  @@map("categories")
+}
+
+model Collection {
+  id         String    @id @default(uuid()) @db.Char(36)
+  name       String    @unique
+  created_at BigInt?
+  updated_at BigInt?
+  products   Product[]
+
+  @@map("collections")
+}
+
+model Cart {
+  id         String  @id @default(uuid()) @db.Char(36)
+  user       User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id    String  @db.VarChar(36)
+  variant    Variant @relation(fields: [variant_id], references: [id], onDelete: Cascade)
+  variant_id String  @db.VarChar(36)
+  quantity   Int     @default(1)
+  created_at BigInt?
+  updated_at BigInt?
+
+  @@index([user_id])
+  @@index([variant_id])
+  @@map("carts")
 }

@@ -29,14 +29,14 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   async validate(req: FastifyRequest, payload: any) {
-    const csrfToken = req.headers['x-csrf-token'];
-    if (!csrfToken) {
-      throw new Api401Error('Can not find csrf token in header');
-    }
-    const csrfTokenFromCookie = req.cookies?.csrf_token;
-    if (csrfTokenFromCookie !== csrfToken) {
-      throw new Api401Error('CSRF token mismatch');
-    }
+    // const csrfToken = req.headers['x-csrf-token'];
+    // if (!csrfToken) {
+    //   throw new Api401Error('Can not find csrf token in header');
+    // }
+    // const csrfTokenFromCookie = req.cookies?.csrf_token;
+    // if (csrfTokenFromCookie !== csrfToken) {
+    //   throw new Api401Error('CSRF token mismatch');
+    // }
 
     const accessToken = req.cookies?.access_token;
     if (!accessToken) {

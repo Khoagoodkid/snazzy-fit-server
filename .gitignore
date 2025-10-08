@@ -3,6 +3,9 @@
 /node_modules
 /build
 
+# gpg private key
+privatekey.asc
+
 # Logs
 logs
 *.log

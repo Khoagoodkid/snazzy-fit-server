@@ -56,6 +56,8 @@ jobs:
 
             echo "Decrypting environment file..."
             export GPG_TTY=$(tty)
+
+            # --pinentry-mode loopback is used to read the passphrase from github secrets without asking by terminal
             gpg --quiet --batch --yes --pinentry-mode loopback \
               --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
             --output .env .env.gpg

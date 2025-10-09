@@ -42,7 +42,9 @@ jobs:
       - name: Import GPG private key
         run: |
           echo "Importing GPG private key..."
-          echo "${{secrets.PRIVATE_KEY}}" > private.key
+
+          cd /root/services/snazzy-fit-server
+          echo "${{secrets.GPG_PRIVATE_KEY}}" > private.key
           gpg --batch --import private.key
           rm private.key
 
@@ -50,6 +52,7 @@ jobs:
       - name: Decrypt environment file
         run: |
           echo "Decrypting environment file..."
+          cd /root/services/snazzy-fit-server
           gpg --quiet --batch --yes --decrypt \
             --passphrase="${{ secrets.GPG_PASSPHRASE }}" \
             --output .env .env.gpg

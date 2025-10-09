@@ -1,0 +1,97 @@
+name: NestJS CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+
+  deploy:
+    name: Deploy to production
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      
+      - name: Pull latest code
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: 22
+          script: |
+            echo "Pulling latest code..."
+            cd /root/services/snazzy-fit-server
+            git fetch origin
+            git checkout main
+            git pull origin main
+
+      - name: Import GPG private key
+        run: |
+          echo "Importing GPG private key..."
+          echo "${{secrets.PRIVATE_KEY}}" > private.key
+          gpg --batch --import private.key
+          rm private.key
+
+
+      - name: Decrypt environment file
+        run: |
+          echo "Decrypting environment file..."
+          gpg --quiet --batch --yes --decrypt \
+            --passphrase="${{ secrets.GPG_PASSPHRASE }}" \
+            --output .env .env.gpg
+
+      - name: Build docker image
+        run: |
+          echo "Building docker image..."
+          # Tag the latest image as previous for rollback
+          docker tag snazzy-fit-server:latest snazzy-fit-server:previous || true 
+          docker build -t snazzy-fit-server:latest .
+
+      - name: Run docker container
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: 22
+          script: |
+            echo "Running docker container..."
+            docker stop snazzy-fit-server-container || true
+            docker rm snazzy-fit-server-container || true
+            docker run -d --name snazzy-fit-server-container -p 8000:8000 snazzy-fit-server:latest
+
+      - name: Rollback docker image
+        if: failure()
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: 22
+          script: |
+            echo "Rolling back docker image..."
+            docker stop snazzy-fit-server-container || true
+            docker rm snazzy-fit-server-container || true
+            if docker image inspect snazzy-fit-server:previous > /dev/null 2>&1; then
+              docker run -d --name snazzy-fit-server-container -p 8000:8000 snazzy-fit-server:previous
+            else
+              echo "No previous image found, rollback skipped."
+            fi
+      - name: Clean up docker image
+        run: |
+          echo "Cleaning up docker image..."
+          docker image prune -f

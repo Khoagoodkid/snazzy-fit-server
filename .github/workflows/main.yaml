@@ -59,7 +59,7 @@ jobs:
 
             # --pinentry-mode loopback is used to read the passphrase from github secrets without asking by terminal
             gpg --quiet --batch --yes --pinentry-mode loopback \
-              --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
+              --passphrase "snazzyfits@Snazzyfits123!" \
             --output .env .env.gpg
 
             echo ".env decrypted successfully."

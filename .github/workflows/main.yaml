@@ -64,6 +64,9 @@ jobs:
           script: |
             echo "Decrypting environment file..."
             cd /root/services/snazzy-fit-server
+
+            # Enable loopback mode so GPG can read the passphrase from stdin
+            export GPG_TTY=$(tty)
             gpg --quiet --batch --yes --decrypt \
               --passphrase="${{ secrets.GPG_PASSPHRASE }}" \
               --output .env .env.gpg

@@ -65,8 +65,8 @@ jobs:
             echo "Decrypting environment file..."
             cd /root/services/snazzy-fit-server
             gpg --quiet --batch --yes --decrypt \
-            --passphrase="${{ secrets.GPG_PASSPHRASE }}" \
-            --output .env .env.gpg
+              --passphrase="${{ secrets.GPG_PASSPHRASE }}" \
+              --output .env .env.gpg
 
       - name: Build docker image
         uses: appleboy/ssh-action@master

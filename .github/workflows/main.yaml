@@ -76,11 +76,11 @@ jobs:
           password: ${{ secrets.PASSWORD }}
           port: 22
           script: |
-          echo "Building docker image..."
-          cd /root/services/snazzy-fit-server
-          # Tag the latest image as previous for rollback
-          docker tag snazzy-fit-server:latest snazzy-fit-server:previous || true 
-          docker build -t snazzy-fit-server:latest .
+            echo "Building docker image..."
+            cd /root/services/snazzy-fit-server
+            # Tag the latest image as previous for rollback
+            docker tag snazzy-fit-server:latest snazzy-fit-server:previous || true 
+            docker build -t snazzy-fit-server:latest .
 
       - name: Run docker container
         uses: appleboy/ssh-action@master

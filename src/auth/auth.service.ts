@@ -79,7 +79,7 @@ export class AuthService {
             httpOnly: true,
             // secure: true,
             maxAge: accessToken.expiresAt,
-            sameSite: 'none',
+            sameSite: 'lax',
             path: '/',
         });
 
@@ -87,7 +87,7 @@ export class AuthService {
             httpOnly: true,
             // secure: true,
             maxAge: refreshToken.expiresAt,
-            sameSite: 'none',
+            sameSite: 'lax',
             path: '/',
         });
 
@@ -180,7 +180,7 @@ export class AuthService {
             httpOnly: true,
             // secure: true,
             maxAge: accessToken.expiresAt,
-            sameSite: 'none',
+            sameSite: 'lax',
             path: '/',
         });
 
@@ -224,7 +224,7 @@ export class AuthService {
                 httpOnly: true,
                 // secure: true,
                 maxAge: accessToken.expiresAt,
-                sameSite: 'none',
+                sameSite: 'lax',
                 path: '/',
             });
 
@@ -232,7 +232,7 @@ export class AuthService {
                 httpOnly: true,
                 // secure: true,
                 maxAge: refreshToken.expiresAt,
-                sameSite: 'none',
+                sameSite: 'lax',
                 path: '/',
             });
 
@@ -241,7 +241,7 @@ export class AuthService {
                     httpOnly: true,
                     // secure: true,
                     maxAge: tokens.expiry_date ? tokens.expiry_date - Date.now() : 3600000,
-                    sameSite: 'none',
+                    sameSite: 'lax',
                     path: '/',
                 });
             }

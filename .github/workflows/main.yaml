@@ -39,7 +39,7 @@ jobs:
             git checkout main
             git pull origin main
 
-      - name: Import GPG private key
+      - name: Import GPG key and decrypt env
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST }}
@@ -47,29 +47,20 @@ jobs:
           password: ${{ secrets.PASSWORD }}
           port: 22
           script: |
-            echo "Importing GPG private key..."
-
             cd /root/services/snazzy-fit-server
-            echo "${{secrets.GPG_PRIVATE_KEY}}" > private.key
+
+            echo "Importing private key..."
+            echo "${{ secrets.GPG_PRIVATE_KEY }}" > private.key
             gpg --batch --import private.key
             rm private.key
 
-      - name: Decrypt environment file
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
-          port: 22
-          script: |
             echo "Decrypting environment file..."
-            cd /root/services/snazzy-fit-server
-
-            # Enable loopback mode so GPG can read the passphrase from stdin
             export GPG_TTY=$(tty)
-            gpg --quiet --batch --yes --decrypt \
-              --passphrase="${{ secrets.GPG_PASSPHRASE }}" \
-              --output .env .env.gpg
+            gpg --quiet --batch --yes --pinentry-mode loopback \
+              --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
+            --output .env .env.gpg
+
+            echo ".env decrypted successfully."
 
       - name: Build docker image
         uses: appleboy/ssh-action@master

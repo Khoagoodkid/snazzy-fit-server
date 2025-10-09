@@ -77,17 +77,17 @@ export class AuthService {
 
         reply.setCookie('access_token', accessToken.token, {
             httpOnly: true,
-            secure: true,
+            // secure: true,
             maxAge: accessToken.expiresAt,
-            sameSite: 'strict',
+            sameSite: 'none',
             path: '/',
         });
 
         reply.setCookie('refresh_token', refreshToken.token, {
             httpOnly: true,
-            secure: true,
+            // secure: true,
             maxAge: refreshToken.expiresAt,
-            sameSite: 'strict',
+            sameSite: 'none',
             path: '/',
         });
 
@@ -178,9 +178,9 @@ export class AuthService {
         const accessToken = await this.generateToken(user, accessSecret, accessExpiresIn, 'accessToken');
         reply.setCookie('access_token', accessToken.token, {
             httpOnly: true,
-            secure: true,
+            // secure: true,
             maxAge: accessToken.expiresAt,
-            sameSite: 'strict',
+            sameSite: 'none',
             path: '/',
         });
 
@@ -222,26 +222,26 @@ export class AuthService {
 
             reply.setCookie('access_token', accessToken.token, {
                 httpOnly: true,
-                secure: true,
+                // secure: true,
                 maxAge: accessToken.expiresAt,
-                sameSite: 'strict',
+                sameSite: 'none',
                 path: '/',
             });
 
             reply.setCookie('refresh_token', refreshToken.token, {
                 httpOnly: true,
-                secure: true,
+                // secure: true,
                 maxAge: refreshToken.expiresAt,
-                sameSite: 'strict',
+                sameSite: 'none',
                 path: '/',
             });
 
             if (tokens.refresh_token) {
                 reply.setCookie('google_refresh_token', tokens.refresh_token, {
                     httpOnly: true,
-                    secure: true,
+                    // secure: true,
                     maxAge: tokens.expiry_date ? tokens.expiry_date - Date.now() : 3600000,
-                    sameSite: 'strict',
+                    sameSite: 'none',
                     path: '/',
                 });
             }

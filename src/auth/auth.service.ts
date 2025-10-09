@@ -77,18 +77,20 @@ export class AuthService {
 
         reply.setCookie('access_token', accessToken.token, {
             httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            path: '/',
             // secure: true,
             maxAge: accessToken.expiresAt,
-            sameSite: 'lax',
-            path: '/',
         });
 
         reply.setCookie('refresh_token', refreshToken.token, {
             httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            path: '/',
             // secure: true,
             maxAge: refreshToken.expiresAt,
-            sameSite: 'lax',
-            path: '/',
         });
 
         // remove sensitive fields
@@ -178,10 +180,10 @@ export class AuthService {
         const accessToken = await this.generateToken(user, accessSecret, accessExpiresIn, 'accessToken');
         reply.setCookie('access_token', accessToken.token, {
             httpOnly: true,
-            // secure: true,
-            maxAge: accessToken.expiresAt,
-            sameSite: 'lax',
+            secure: true,
+            sameSite: 'none',
             path: '/',
+            maxAge: accessToken.expiresAt,
         });
 
         return {};
@@ -222,26 +224,26 @@ export class AuthService {
 
             reply.setCookie('access_token', accessToken.token, {
                 httpOnly: true,
-                // secure: true,
-                maxAge: accessToken.expiresAt,
-                sameSite: 'lax',
+                secure: true,
+                sameSite: 'none',
                 path: '/',
+                maxAge: accessToken.expiresAt,
             });
 
             reply.setCookie('refresh_token', refreshToken.token, {
                 httpOnly: true,
-                // secure: true,
-                maxAge: refreshToken.expiresAt,
-                sameSite: 'lax',
+                secure: true,
+                sameSite: 'none',
                 path: '/',
+                maxAge: refreshToken.expiresAt,
             });
 
             if (tokens.refresh_token) {
                 reply.setCookie('google_refresh_token', tokens.refresh_token, {
                     httpOnly: true,
-                    // secure: true,
+                    secure: true,
                     maxAge: tokens.expiry_date ? tokens.expiry_date - Date.now() : 3600000,
-                    sameSite: 'lax',
+                    sameSite: 'none',
                     path: '/',
                 });
             }
@@ -273,11 +275,11 @@ export class AuthService {
             throw new BusinessLogicError("User not found");
         }
 
-        if(user.is_verified === 1) {
+        if (user.is_verified === 1) {
             throw new BusinessLogicError("Email already verified");
         }
 
-        if(user.verify_token !== verify_token) {
+        if (user.verify_token !== verify_token) {
             throw new BusinessLogicError("Invalid verify token");
         }
 
@@ -306,7 +308,7 @@ export class AuthService {
         }
 
         const isSameWithOldPassword = await bcrypt.compare(changePasswordDto.password, user.password);
-        if(isSameWithOldPassword) {
+        if (isSameWithOldPassword) {
             throw new BusinessLogicError("New password cannot be the same as the old password");
         }
 

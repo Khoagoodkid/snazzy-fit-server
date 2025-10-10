@@ -10,6 +10,7 @@ import { CollectionModule } from './collection/collection.module';
 import { CategoriesModule } from './categories/categories.module';
 import { CartModule } from './cart/cart.module';
 import { VariantModule } from './variant/variant.module';
+import { StripeModule } from './stripe/stripe.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { VariantModule } from './variant/variant.module';
     CollectionModule,
     CategoriesModule,
     CartModule,
+    StripeModule.forRootAsync(),  
     VariantModule,
   ],
   controllers: [AppController],

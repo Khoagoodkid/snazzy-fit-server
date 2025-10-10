@@ -36,6 +36,7 @@ model User {
   failed_attempts       Int?      @default(0)
   lock_until            BigInt?
   cart                  Cart[]
+  orders                Order[]
 
   @@map("users")
 }
@@ -51,25 +52,25 @@ model Token {
 }
 
 model Product {
-  id            String     @id @default(uuid()) @db.Char(36)
+  id            String      @id @default(uuid()) @db.Char(36)
   name          String
-  slug          String     @unique
+  slug          String      @unique
   description   String?
   brand         String?
   basePrice     Float
-  collection    Collection @relation(fields: [collection_id], references: [id], onDelete: Cascade)
+  collection    Collection  @relation(fields: [collection_id], references: [id], onDelete: Cascade)
   collection_id String
-  category      Category   @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  category      Category    @relation(fields: [category_id], references: [id], onDelete: Cascade)
   category_id   String
-  discount      Float      @default(0)
-  currency      String     @default("USD")
+  discount      Float       @default(0)
+  currency      String      @default("USD")
   mainImage     String?
   images        Json?
-  isFeatured    Boolean    @default(false)
-  isActive      Boolean    @default(true)
+  isFeatured    Boolean     @default(false)
+  isActive      Boolean     @default(true)
   tags          Json
-  ratingAvg     Float      @default(0)
-  ratingCount   Int        @default(0)
+  ratingAvg     Float       @default(0)
+  ratingCount   Int         @default(0)
   variants      Variant[]
   created_at    BigInt?
   updated_at    BigInt?
@@ -84,12 +85,14 @@ model Product {
 model Variant {
   id         String      @id @default(uuid()) @db.Char(36)
   color      String
+  color_code String
   size       VariantSize
   price      Float
   stock      Int
   images     Json?
   product    Product     @relation(fields: [product_id], references: [id], onDelete: Cascade)
   carts      Cart[]
+  orderItems OrderItem[]
   product_id String
   created_at BigInt?
   updated_at BigInt?
@@ -138,4 +141,40 @@ model Cart {
   @@index([user_id])
   @@index([variant_id])
   @@map("carts")
+}
+
+model Order {
+  id          String      @id @default(uuid()) @db.Char(36)
+  user_id     String
+  user        User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  status      OrderStatus @default(PENDING)
+  totalAmount Decimal     @default(0)
+  currency    String      @default("USD")
+  items       OrderItem[]
+  created_at  BigInt?
+  updated_at  BigInt?
+
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model OrderItem {
+  id         String  @id @default(uuid()) @db.Char(36)
+  order      Order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  order_id   String  @db.VarChar(36)
+  variant    Variant @relation(fields: [variant_id], references: [id], onDelete: Cascade)
+  variant_id String  @db.VarChar(36)
+  quantity   Int     @default(1)
+  unitPrice  Decimal @default(0)
+  totalPrice Decimal @default(0)
+
+  @@map("order_items")
 }

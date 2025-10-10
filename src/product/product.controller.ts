@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Query, Res } from "@nestjs/common";
 import { ProductService } from "./product.service";
-import { ApiQuery } from "@nestjs/swagger";
+import { ApiParam, ApiQuery } from "@nestjs/swagger";
 import { FastifyReply } from "fastify";
 import { GetResponse } from "src/core/successResponse";
 
@@ -20,6 +20,8 @@ export class ProductController {
     @ApiQuery({ name: 'price_from', required: false }) 
     @ApiQuery({ name: 'price_to', required: false }) 
     @ApiQuery({ name: 'seasons', required: false })
+    @ApiQuery({ name: 'sort_by', required: false })
+    @ApiQuery({ name: 'sort_order', required: false })
     async getProducts(
         @Res() reply: FastifyReply,
         @Query('category_id') category_id?: string,
@@ -31,12 +33,27 @@ export class ProductController {
         @Query('price_from') priceFrom?: number,
         @Query('price_to') priceTo?: number,
         @Query('seasons') seasons?: string,
+        @Query('sort_by') sortBy?: string,
+        @Query('sort_order') sortOrder?: string,
     ) {
-        const data = await this.productService.getProducts({ category_id, collection_id, limit, offset, keyword, styles, priceFrom, priceTo, seasons });
+        const data = await this.productService.getProducts({ category_id, collection_id, limit, offset, keyword, styles, priceFrom, priceTo, seasons, sortBy, sortOrder });
         return reply.send(new GetResponse({
             data: data,
             message: 'Products fetched successfully',
             totalRecord: data.products.length,
+        }));
+    }
+
+    @Get(':slug')
+    @ApiParam({ name: 'slug', required: true })
+    async getProductDetail(
+        @Res() reply: FastifyReply,
+        @Param('slug') slug: string,
+    ) {
+        const data = await this.productService.getBySlug(slug);
+        return reply.send(new GetResponse({
+            data: data,
+            message: 'Product detail fetched successfully',
         }));
     }
 }

@@ -18,6 +18,8 @@ export class ProductService {
         seasons,
         priceFrom,
         priceTo,
+        sortBy,
+        sortOrder,
     }: {
         category_id?: string,
         collection_id?: string,
@@ -28,6 +30,8 @@ export class ProductService {
         seasons?: string,
         priceFrom?: number,
         priceTo?: number,
+        sortBy?: string,
+        sortOrder?: string,
     }) {
         try {
 
@@ -45,6 +49,7 @@ export class ProductService {
             const include = {
                 variants: true,
                 category: true,
+                collection: true,
             }
 
             let maxPrice = 0;
@@ -55,7 +60,7 @@ export class ProductService {
                 }, 0);
             }
 
-            const products = await this.productRepository.getProducts(where, limit, offset, include);
+            const products = await this.productRepository.getProducts(where, limit, offset, include, sortBy, sortOrder);
             
            
             
@@ -73,6 +78,14 @@ export class ProductService {
     async getById(id: string) {
         try {
             return this.productRepository.findById(id);
+        } catch (error) {
+            throw new BusinessLogicError("Failed to get product");
+        }
+    }
+
+    async getBySlug(slug: string) {
+        try {
+            return this.productRepository.findBySlug(slug);
         } catch (error) {
             throw new BusinessLogicError("Failed to get product");
         }

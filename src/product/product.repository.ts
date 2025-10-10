@@ -9,7 +9,9 @@ export class ProductRepository {
         where: any,
         limit?: number,
         offset?: number,
-        include?: any
+        include?: any,
+        sortBy?: string,
+        sortOrder?: string,
     ) {
         return this.prisma.product.findMany({
             where,
@@ -18,6 +20,11 @@ export class ProductRepository {
             include: {
                 ...include,
             },
+            ...(sortBy && sortOrder && {
+                orderBy: {
+                    [sortBy]: sortOrder,
+                },
+            }),
         });
     }
 
@@ -33,6 +40,17 @@ export class ProductRepository {
     async findById(id: string) {
         return this.prisma.product.findUnique({
             where: { id },
+        });
+    }
+
+    async findBySlug(slug: string) {
+        return this.prisma.product.findUnique({
+            where: { slug },
+            include: {
+                variants: true,
+                category: true,
+                collection: true,
+            },
         });
     }
 

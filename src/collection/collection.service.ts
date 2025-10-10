@@ -68,7 +68,7 @@ export class CollectionService {
             try {
                 const serializedCollectionsWithCategories = SerializeService.serializeBigInt(collectionsWithCategories);
 
-                const cacheResult = await this.redisService.set(cacheKey, JSON.stringify(serializedCollectionsWithCategories), 300);
+                const cacheResult = await this.redisService.set(cacheKey, JSON.stringify(serializedCollectionsWithCategories), 3600);
                 if (cacheResult) {
                     console.log('Miss key:', cacheKey);
                 }

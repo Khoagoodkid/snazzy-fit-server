@@ -13,7 +13,12 @@ export class CartRepository {
             include: {
                 variant: {
                     include: {
-                        product: true,
+                        product: {
+                            include: {
+                                category: true,
+                                collection: true,
+                            },
+                        }
                     },
                 },
             },
@@ -31,6 +36,12 @@ export class CartRepository {
     async deleteById(id: string) {
         return this.prisma.cart.delete({
             where: { id },
+        });
+    }
+
+    async deleteMany(ids: string[]) {
+        return this.prisma.cart.deleteMany({
+            where: { id: { in: ids } },
         });
     }
 

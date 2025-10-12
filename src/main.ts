@@ -17,6 +17,23 @@ async function bootstrap() {
     (AppModule, new FastifyAdapter());
   const configService = app.get(ConfigService);
 
+  // Add raw body to request for Stripe webhooks
+  app.getHttpAdapter().getInstance().addHook('preParsing', async (req: any, reply: any, payload: any) => {
+    if (req.url === '/api/stripe/webhook' && req.method === 'POST') {
+      const chunks: Buffer[] = [];
+      for await (const chunk of payload) {
+        chunks.push(chunk);
+      }
+      req.rawBody = Buffer.concat(chunks);
+      // Return a stream-like object from the raw body for the parser
+      const { Readable } = await import('stream');
+      const newPayload = new Readable();
+      newPayload.push(req.rawBody);
+      newPayload.push(null);
+      return newPayload;
+    }
+  });
+
   app.setGlobalPrefix('api');
   // app.enableCors();
   app.useGlobalPipes(new CustomValidationPipe());

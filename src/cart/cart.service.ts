@@ -43,6 +43,14 @@ export class CartService {
         }
     }
 
+    async removeMany(ids: string[]) {
+        try {
+            return this.cartRepository.deleteMany(ids);
+        } catch (error) {
+            throw new BusinessLogicError("Failed to remove carts");
+        }
+    }
+
     async updateCart(id: string, updateCartDto: UpdateCartDto) {
         try {
             return this.cartRepository.updateCart({ id }, { quantity: updateCartDto.quantity });

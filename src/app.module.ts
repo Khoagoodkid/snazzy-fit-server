@@ -11,6 +11,10 @@ import { CategoriesModule } from './categories/categories.module';
 import { CartModule } from './cart/cart.module';
 import { VariantModule } from './variant/variant.module';
 import { StripeModule } from './stripe/stripe.module';
+import { OrderModule } from './order/order.module';
+import { AddressModule } from './address/address.module';
+import { UploadModule } from './upload/upload.module';
+import { ProductReviewModule } from './product-review/product-review.module';
 
 @Module({
   imports: [
@@ -22,8 +26,12 @@ import { StripeModule } from './stripe/stripe.module';
     CollectionModule,
     CategoriesModule,
     CartModule,
-    StripeModule.forRootAsync(),  
+    StripeModule.forRootAsync(),
     VariantModule,
+    OrderModule,
+    AddressModule,
+    UploadModule,
+    ProductReviewModule,
   ],
   controllers: [AppController],
   providers: [AppService],

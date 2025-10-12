@@ -8,35 +8,40 @@ datasource db {
 }
 
 model User {
-  id                    String    @id @default(uuid()) @db.Char(36)
-  name                  String    @db.VarChar(255)
-  email                 String    @unique(map: "email") @db.VarChar(255)
-  password              String?   @default("") @db.VarChar(255)
-  phone                 String?   @db.VarChar(20)
-  address               String?   @db.Text
+  id                    String          @id @default(uuid()) @db.Char(36)
+  name                  String          @db.VarChar(255)
+  email                 String          @unique(map: "email") @db.VarChar(255)
+  password              String?         @default("") @db.VarChar(255)
+  phone                 String?         @db.VarChar(20)
+  address               String?         @db.Text
   language_id           Int?
-  provider              String?   @db.VarChar(50)
-  google_id             String?   @db.VarChar(255)
-  is_verified           Int?      @default(0)
-  avatar                String?   @db.Text
-  is_onboard            Boolean?  @default(false)
-  blog_id               String?   @db.Char(36)
-  last_receive_message  DateTime? @db.Timestamp(0)
-  last_active           DateTime? @db.Timestamp(0)
-  is_email_subscribed   Boolean?  @default(false)
-  is_password_set       Boolean?  @default(false)
-  status                Int       @default(1) @db.TinyInt
+  provider              String?         @db.VarChar(50)
+  google_id             String?         @db.VarChar(255)
+  is_verified           Int?            @default(0)
+  avatar                String?         @db.Text
+  is_onboard            Boolean?        @default(false)
+  blog_id               String?         @db.Char(36)
+  last_receive_message  DateTime?       @db.Timestamp(0)
+  last_active           DateTime?       @db.Timestamp(0)
+  is_email_subscribed   Boolean?        @default(false)
+  is_password_set       Boolean?        @default(false)
+  status                Int             @default(1) @db.TinyInt
+  gender                String?         @db.VarChar(255)
   created_at            BigInt?
   updated_at            BigInt?
   deleted_at            BigInt?
-  change_password_token String?   @db.VarChar(255)
-  otp_code              String?   @db.VarChar(10)
+  change_password_token String?         @db.VarChar(255)
+  otp_code              String?         @db.VarChar(10)
   otp_expires_at        BigInt?
-  verify_token          String?   @db.VarChar(255)
-  failed_attempts       Int?      @default(0)
+  verify_token          String?         @db.VarChar(255)
+  failed_attempts       Int?            @default(0)
   lock_until            BigInt?
   cart                  Cart[]
   orders                Order[]
+  addresses             Address[]
+  productReviews        ProductReview[]
+  Ticket                Ticket[]
+  Session               Session[]
 
   @@map("users")
 }
@@ -52,28 +57,29 @@ model Token {
 }
 
 model Product {
-  id            String      @id @default(uuid()) @db.Char(36)
-  name          String
-  slug          String      @unique
-  description   String?
-  brand         String?
-  basePrice     Float
-  collection    Collection  @relation(fields: [collection_id], references: [id], onDelete: Cascade)
-  collection_id String
-  category      Category    @relation(fields: [category_id], references: [id], onDelete: Cascade)
-  category_id   String
-  discount      Float       @default(0)
-  currency      String      @default("USD")
-  mainImage     String?
-  images        Json?
-  isFeatured    Boolean     @default(false)
-  isActive      Boolean     @default(true)
-  tags          Json
-  ratingAvg     Float       @default(0)
-  ratingCount   Int         @default(0)
-  variants      Variant[]
-  created_at    BigInt?
-  updated_at    BigInt?
+  id             String          @id @default(uuid()) @db.Char(36)
+  name           String
+  slug           String          @unique
+  description    String?
+  brand          String?
+  basePrice      Float
+  collection     Collection      @relation(fields: [collection_id], references: [id], onDelete: Cascade)
+  collection_id  String
+  category       Category        @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  category_id    String
+  discount       Float           @default(0)
+  currency       String          @default("USD")
+  mainImage      String?
+  images         Json?
+  isFeatured     Boolean         @default(false)
+  isActive       Boolean         @default(true)
+  tags           Json
+  ratingAvg      Float           @default(0)
+  ratingCount    Int             @default(0)
+  variants       Variant[]
+  productReviews ProductReview[]
+  created_at     BigInt?
+  updated_at     BigInt?
 
   @@index([collection_id])
   @@index([category_id])
@@ -83,19 +89,20 @@ model Product {
 }
 
 model Variant {
-  id         String      @id @default(uuid()) @db.Char(36)
-  color      String
-  color_code String
-  size       VariantSize
-  price      Float
-  stock      Int
-  images     Json?
-  product    Product     @relation(fields: [product_id], references: [id], onDelete: Cascade)
-  carts      Cart[]
-  orderItems OrderItem[]
-  product_id String
-  created_at BigInt?
-  updated_at BigInt?
+  id             String          @id @default(uuid()) @db.Char(36)
+  color          String
+  color_code     String
+  size           VariantSize
+  price          Float
+  stock          Int
+  images         Json?
+  product        Product         @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  carts          Cart[]
+  orderItems     OrderItem[]
+  product_id     String
+  created_at     BigInt?
+  updated_at     BigInt?
+  productReviews ProductReview[]
 
   @@index([product_id])
   @@map("variants")
@@ -129,14 +136,15 @@ model Collection {
 }
 
 model Cart {
-  id         String  @id @default(uuid()) @db.Char(36)
-  user       User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  user_id    String  @db.VarChar(36)
-  variant    Variant @relation(fields: [variant_id], references: [id], onDelete: Cascade)
-  variant_id String  @db.VarChar(36)
-  quantity   Int     @default(1)
+  id         String      @id @default(uuid()) @db.Char(36)
+  user       User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id    String      @db.VarChar(36)
+  variant    Variant     @relation(fields: [variant_id], references: [id], onDelete: Cascade)
+  variant_id String      @db.VarChar(36)
+  quantity   Int         @default(1)
   created_at BigInt?
   updated_at BigInt?
+  orderItems OrderItem[]
 
   @@index([user_id])
   @@index([variant_id])
@@ -144,15 +152,28 @@ model Cart {
 }
 
 model Order {
-  id          String      @id @default(uuid()) @db.Char(36)
-  user_id     String
-  user        User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  status      OrderStatus @default(PENDING)
-  totalAmount Decimal     @default(0)
-  currency    String      @default("USD")
-  items       OrderItem[]
-  created_at  BigInt?
-  updated_at  BigInt?
+  id               String      @id @default(uuid()) @db.Char(36)
+  user_id          String
+  user             User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  status           OrderStatus @default(PENDING)
+  total_amount     Float       @default(0)
+  shipping_amount  Float       @default(0)
+  sub_total        Float       @default(0)
+  tax_amount       Float       @default(0)
+  currency         String      @default("USD")
+  customer_name    String
+  customer_email   String
+  customer_phone   String
+  customer_address String
+  customer_city    String
+  customer_state   String
+  customer_zip     String
+  customer_country String
+  payment_method   String
+  items            OrderItem[]
+  created_at       BigInt?
+  updated_at       BigInt?
+  tickets          Ticket[]
 
   @@map("orders")
 }
@@ -167,14 +188,131 @@ enum OrderStatus {
 }
 
 model OrderItem {
-  id         String  @id @default(uuid()) @db.Char(36)
-  order      Order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
-  order_id   String  @db.VarChar(36)
-  variant    Variant @relation(fields: [variant_id], references: [id], onDelete: Cascade)
-  variant_id String  @db.VarChar(36)
-  quantity   Int     @default(1)
-  unitPrice  Decimal @default(0)
-  totalPrice Decimal @default(0)
+  id          String  @id @default(uuid()) @db.Char(36)
+  cart        Cart?   @relation(fields: [cart_id], references: [id], onDelete: Cascade)
+  cart_id     String? @db.VarChar(36)
+  order       Order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  order_id    String  @db.VarChar(36)
+  variant     Variant @relation(fields: [variant_id], references: [id], onDelete: Cascade)
+  variant_id  String  @db.VarChar(36)
+  quantity    Int     @default(1)
+  unit_price  Float   @default(0)
+  total_price Float   @default(0)
 
   @@map("order_items")
+}
+
+model Address {
+  id                  String  @id @default(uuid()) @db.Char(36)
+  user_id             String  @db.VarChar(36)
+  user                User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  customer_first_name String
+  customer_last_name  String
+  company_name        String?
+  address             String
+  city                String
+  state               String
+  zip                 String
+  country             String
+  is_default          Boolean @default(false)
+  phone               String
+
+  created_at BigInt?
+  updated_at BigInt?
+
+  @@map("addresses")
+}
+
+model ProductReview {
+  id         String   @id @default(uuid()) @db.Char(36)
+  product_id String   @db.VarChar(36)
+  product    Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  user_id    String   @db.VarChar(36)
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  variant_id String?  @db.VarChar(36)
+  variant    Variant? @relation(fields: [variant_id], references: [id], onDelete: Cascade)
+  rating     Int      @default(5)
+  images     Json?
+  comment    String?
+  created_at BigInt?
+  updated_at BigInt?
+
+  @@index([product_id])
+  @@index([user_id])
+  @@index([variant_id])
+  @@map("product_reviews")
+}
+
+model Ticket {
+  id          String         @id @default(uuid()) @db.Char(36)
+  user_id     String         @db.VarChar(36)
+  user        User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  images      Json?
+  status      TicketStatus   @default(PENDING)
+  priority    TicketPriority @default(LOW)
+  order_id    String?        @db.VarChar(36)
+  order       Order?         @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  created_at  BigInt?
+  updated_at  BigInt?
+  resolved_at BigInt?
+  sessions    Session[]
+
+  @@index([user_id])
+  @@index([order_id])
+  @@map("tickets")
+}
+
+enum TicketStatus {
+  PENDING
+  RESOLVED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Session {
+  id         String        @id @default(uuid()) @db.Char(36)
+  user_id    String?       @db.VarChar(36)
+  user       User?         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  ticket_id  String?       @db.VarChar(36)
+  ticket     Ticket?       @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
+  source     SessionSource @default(WEB)
+  created_at BigInt?
+  updated_at BigInt?
+  messages   Message[]
+
+  @@index([user_id])
+  @@index([ticket_id])
+  @@map("sessions")
+}
+
+enum SessionSource {
+  WEB
+  API
+}
+
+model Message {
+  id               String      @id @default(uuid()) @db.Char(36)
+  session_id       String      @db.VarChar(36)
+  session          Session     @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  content          String
+  media            Json?
+  role             MessageRole @default(USER)
+  receiver_read_at BigInt?
+  created_at       BigInt?
+  updated_at       BigInt?
+
+  @@index([session_id])
+  @@map("messages")
+}
+
+enum MessageRole {
+  USER
+  BOT
+  ASSISTANT
 }

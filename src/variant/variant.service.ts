@@ -22,4 +22,15 @@ export class VariantService {
             throw new BusinessLogicError("Failed to get all variants");
         }
     }
+
+    async updateStockMany(variants: { id: string; by: number }[]) {
+        try {
+
+            Promise.all(variants.map(async (variant) => {
+                await this.variantRepository.update({ id: variant.id }, { stock: { decrement: variant.by } });
+            }));
+        } catch (error) {
+            throw new BusinessLogicError("Failed to update stock");
+        }
+    }
 }

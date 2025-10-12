@@ -18,4 +18,11 @@ export class VariantRepository {
             },
         });
     }
+
+    async update(where: any, data: any) {   
+        return this.prisma.variant.update({
+            where,
+            data,
+        });
+    }
 }

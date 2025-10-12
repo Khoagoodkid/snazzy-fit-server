@@ -33,9 +33,9 @@ export class StripeController {
         throw new Error('No raw body found in request');
       }
       
-      // const endpointSecret = this.configService.get('STRIPE_WEBHOOK_SECRET');
+      const endpointSecret = this.configService.get('STRIPE_WEBHOOK_SECRET');
       console.log("payload received, size:", payload.length);
-      const endpointSecret = 'whsec_7b2c0eb0e0e34f0fdf490395ee17c3bd28585bf253cfafe4138c14a15252d389';
+      // const endpointSecret = 'whsec_7b2c0eb0e0e34f0fdf490395ee17c3bd28585bf253cfafe4138c14a15252d389';
       const event = this.stripeService.constructEvent(payload, signature, endpointSecret);
 
       console.log(`✨ Received event: ${event.type}`);

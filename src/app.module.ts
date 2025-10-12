@@ -15,6 +15,7 @@ import { OrderModule } from './order/order.module';
 import { AddressModule } from './address/address.module';
 import { UploadModule } from './upload/upload.module';
 import { ProductReviewModule } from './product-review/product-review.module';
+import { TicketModule } from './ticket/ticket.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { ProductReviewModule } from './product-review/product-review.module';
     AddressModule,
     UploadModule,
     ProductReviewModule,
+    TicketModule,
   ],
   controllers: [AppController],
   providers: [AppService],

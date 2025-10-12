@@ -52,8 +52,15 @@ export class ProductReviewService {
         }
     }
 
-    async deleteReview(id: string) {
+    async deleteReview(id: string, userId: string) {
         try {
+            const review = await this.productReviewRepository.findById(id);
+            if (!review) {
+                throw new BusinessLogicError("Review not found");
+            }
+            if (review.user_id !== userId) {
+                throw new BusinessLogicError("You are not authorized to delete this review");
+            }
             return this.productReviewRepository.delete({
                 id,
             });

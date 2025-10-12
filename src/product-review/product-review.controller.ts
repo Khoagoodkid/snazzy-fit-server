@@ -40,8 +40,9 @@ export class ProductReviewController {
 
     @Delete('/:id')
     @UseGuards(JwtAuthGuard)
-    async deleteProductReview(@Param('id') id: string, @Res() reply: FastifyReply) {
-        const productReview = await this.productReviewService.deleteReview(id);
+    async deleteProductReview(@Param('id') id: string, @Res() reply: FastifyReply, @Req() req: FastifyRequest) {
+        const userId = (req as any).user.id;
+        const productReview = await this.productReviewService.deleteReview(id, userId);
         return reply.send(new DeletedResponse({
             message: 'Product review deleted successfully',
             data: productReview,

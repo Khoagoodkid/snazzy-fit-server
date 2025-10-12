@@ -250,6 +250,7 @@ model Ticket {
   title       String
   description String
   images      Json?
+  type        TicketType     @default(GENERAL)
   status      TicketStatus   @default(PENDING)
   priority    TicketPriority @default(LOW)
   order_id    String?        @db.VarChar(36)
@@ -257,11 +258,20 @@ model Ticket {
   created_at  BigInt?
   updated_at  BigInt?
   resolved_at BigInt?
+  tags        Json?
   sessions    Session[]
 
   @@index([user_id])
   @@index([order_id])
   @@map("tickets")
+}
+
+enum TicketType {
+  GENERAL
+  SUPPORT
+  REVIEW
+  COMPLAINT
+  OTHER
 }
 
 enum TicketStatus {

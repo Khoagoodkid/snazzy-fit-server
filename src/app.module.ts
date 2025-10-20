@@ -16,6 +16,13 @@ import { AddressModule } from './address/address.module';
 import { UploadModule } from './upload/upload.module';
 import { ProductReviewModule } from './product-review/product-review.module';
 import { TicketModule } from './ticket/ticket.module';
+import { RoleModule } from './role/role.module';
+import { PermissionModule } from './permission/permission.module';
+import { RolePermissionModule } from './role-permission/role-permission.module';
+import { SessionModule } from './session/session.module';
+import { ChatModule } from './chat/chat.module';
+import { DiscordModule } from './discord/discord.module';
+import { TelegramModule } from './telegram/telegram.module';
 
 @Module({
   imports: [
@@ -34,6 +41,13 @@ import { TicketModule } from './ticket/ticket.module';
     UploadModule,
     ProductReviewModule,
     TicketModule,
+    RoleModule,
+    PermissionModule,
+    RolePermissionModule,
+    SessionModule,
+    ChatModule,
+    DiscordModule,
+    TelegramModule,
   ],
   controllers: [AppController],
   providers: [AppService],

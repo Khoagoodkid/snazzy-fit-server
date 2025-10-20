@@ -11,6 +11,7 @@ import * as bcrypt from "bcrypt";
 import { SanitizeDataService } from "src/utils/sanitize-data.service";
 import { UploadService } from "src/upload/upload.service";
 import { UpdateUserDto } from "./dto/update-user.dto";
+import { RoleService } from "src/role/role.service";
 
 @Injectable()
 export class UserService {
@@ -18,7 +19,8 @@ export class UserService {
         private readonly userRepository: UserRepository,
         private readonly passwordService: PasswordService,
         private readonly hashService: HashService,
-        private readonly uploadService: UploadService
+        private readonly uploadService: UploadService,
+        private readonly roleService: RoleService
     ) { }
 
 
@@ -36,6 +38,14 @@ export class UserService {
             return this.userRepository.findById(id);
         } catch (error) {
             throw new BusinessLogicError("Failed to find user");
+        }
+    }
+
+    async getAllUsers() {
+        try {
+            return this.userRepository.findAll();
+        } catch (error) {
+            throw new BusinessLogicError("Failed to get all users");
         }
     }
 
@@ -86,7 +96,7 @@ export class UserService {
         }
     }
 
-    async createUser(user: CreateUserDto, verify_token: string) {
+    async createUser(user: any, verify_token: string) {
 
         try {
             return this.userRepository.create(user, verify_token);
@@ -97,7 +107,12 @@ export class UserService {
 
     async createGoogleUser(email: string, name: string, avatar: string, google_id: string) {
         try {
-            return this.userRepository.createGoogleUser(email, name, avatar, google_id);
+            const userRole = await this.roleService.findByName('USER');
+            if (!userRole) {
+                throw new BusinessLogicError("There is an error with the system, please contact the administrator");
+            }
+
+            return this.userRepository.createGoogleUser(email, name, avatar, google_id, userRole.id);
         } catch (error) {
             throw new BusinessLogicError("Failed to create user");
         }

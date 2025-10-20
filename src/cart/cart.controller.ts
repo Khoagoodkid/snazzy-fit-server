@@ -5,6 +5,9 @@ import { JwtAuthGuard } from "src/auth/guards/auth.guard";
 import { CreatedResponse, DeletedResponse, GetResponse, UpdatedResponse } from "src/core/successResponse";
 import { CreateCartDto } from "./dto/create-cart.dto";
 import { UpdateCartDto } from "./dto/update-cart.dto";
+import { Permission } from "src/auth/decorators/permission.decorators";
+import { PermissionGuard } from "src/auth/guards/permission.guard";
+import { PermissionStore } from "src/constants/permission.constants";
 
 
 @Controller('cart')
@@ -12,7 +15,8 @@ export class CartController {
     constructor(private readonly cartService: CartService) { }
 
     @Get('')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, PermissionGuard)
+    @Permission(PermissionStore.GET_CART)
     async getCart(@Req() req: FastifyRequest, @Res() reply: FastifyReply) {
         const userId = (req as any).user.id;
         const data = await this.cartService.getCart(userId);
@@ -24,7 +28,8 @@ export class CartController {
     }
 
     @Post('add-to-cart')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, PermissionGuard)
+    @Permission(PermissionStore.ADD_TO_CART)
     async addToCart(@Req() req: FastifyRequest, @Res() reply: FastifyReply, @Body() createCartDto: CreateCartDto) {
         const userId = (req as any).user.id;
         console.log("1", userId);
@@ -36,7 +41,8 @@ export class CartController {
     }
 
     @Delete('/:id')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, PermissionGuard)
+    @Permission(PermissionStore.REMOVE_FROM_CART)
     async removeFromCart(@Req() req: FastifyRequest, @Res() reply: FastifyReply, @Param('id') id: string) {
         const data = await this.cartService.removeCart(id);
         return reply.send(new DeletedResponse({
@@ -46,7 +52,8 @@ export class CartController {
     }
 
     @Patch('/:id')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, PermissionGuard)
+    @Permission(PermissionStore.UPDATE_CART)
     async updateCart(@Req() req: FastifyRequest, @Res() reply: FastifyReply, @Param('id') id: string, @Body() updateCartDto: UpdateCartDto) {
         const data = await this.cartService.updateCart(id, updateCartDto);
         return reply.send(new UpdatedResponse({

@@ -12,6 +12,9 @@ import { JwtModule } from "@nestjs/jwt";
 import { SanitizeDataService } from "src/utils/sanitize-data.service";
 import { GoogleModule } from "src/google/google.module";
 import { SendMailModule } from "src/send-mail/send-mail.module";
+import { DeviceModule } from "src/device/device.module";
+import { LoginAttemptModule } from "src/login-attempt/login-attempt.module";
+import { RoleModule } from "src/role/role.module";
 
 @Module({
     imports: [
@@ -21,6 +24,9 @@ import { SendMailModule } from "src/send-mail/send-mail.module";
         JwtModule,
         GoogleModule,
         SendMailModule,
+        DeviceModule,
+        LoginAttemptModule,
+        RoleModule,
     ],
     controllers: [AuthController],
     providers: [

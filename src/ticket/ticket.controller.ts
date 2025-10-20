@@ -7,6 +7,9 @@ import { ParseMultipartFormInterceptor } from "src/interceptors/parse-formdata";
 import { ApiConsumes, ApiBody } from "@nestjs/swagger";
 import { CreateTicketDto } from "./dto/create-ticket.dto";
 import { UpdateTicketDto } from "./dto/update-ticket.dto";
+import { Permission } from "src/auth/decorators/permission.decorators";
+import { PermissionStore } from "src/constants/permission.constants";
+import { PermissionGuard } from "src/auth/guards/permission.guard";
 
 
 @Controller('tickets')
@@ -15,7 +18,8 @@ export class TicketController {
 
 
     @Post('/')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, PermissionGuard)
+    @Permission(PermissionStore.CREATE_TICKET)
     @ApiConsumes('multipart/form-data')
     @ApiBody({ type: CreateTicketDto })
     @UseInterceptors(ParseMultipartFormInterceptor)
@@ -30,7 +34,8 @@ export class TicketController {
     }
 
     @Get('/')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, PermissionGuard)
+    @Permission(PermissionStore.GET_TICKETS)
     async getTickets(@Req() req: FastifyRequest, @Res() reply: FastifyReply) {
         const userId = (req as any).user.id;
         const data = await this.ticketService.getTicketsByUserId(userId);
@@ -41,8 +46,20 @@ export class TicketController {
         }));
     }
 
+    @Get('/admin/get-all')
+    @UseGuards(JwtAuthGuard, PermissionGuard)
+    @Permission(PermissionStore.GET_TICKETS)
+    async getAllTickets(@Req() req: FastifyRequest, @Res() reply: FastifyReply) {
+        const data = await this.ticketService.getAllTickets();
+        return reply.send(new GetResponse({
+            data: data,
+            message: 'Tickets fetched successfully',
+        }));
+    }
+
     @Get('/:id')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, PermissionGuard)
+    @Permission(PermissionStore.GET_TICKET_BY_ID)
     async getTicket(@Param('id') id: string, @Res() reply: FastifyReply, @Req() req: FastifyRequest) {
         const userId = (req as any).user.id;
         const data = await this.ticketService.getTicketById(id, userId);
@@ -53,10 +70,11 @@ export class TicketController {
     }
 
     @Patch('/:id')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, PermissionGuard)
     @ApiConsumes('multipart/form-data')
     @ApiBody({ type: UpdateTicketDto })
     @UseInterceptors(ParseMultipartFormInterceptor)
+    @Permission(PermissionStore.UPDATE_TICKET)
     async updateTicket(@Param('id') id: string, @Res() reply: FastifyReply, @Req() req: FastifyRequest) {
         const userId = (req as any).user.id;
         const data = await this.ticketService.updateTicket(id, req.body as UpdateTicketDto, userId);
@@ -67,13 +85,26 @@ export class TicketController {
     }
 
     @Delete('/:id')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, PermissionGuard)
+    @Permission(PermissionStore.DELETE_TICKET)
     async deleteTicket(@Param('id') id: string, @Res() reply: FastifyReply, @Req() req: FastifyRequest) {
         const userId = (req as any).user.id;
         const data = await this.ticketService.deleteTicket(id, userId);
         return reply.send(new DeletedResponse({
             data: data,
             message: 'Ticket deleted successfully',
+        }));
+    }
+
+    @Patch('/:id/admin/mark-as-resolved')
+    @UseGuards(JwtAuthGuard, PermissionGuard)
+    @Permission(PermissionStore.MARK_AS_RESOLVED)
+    async markAsResolved(@Param('id') id: string, @Res() reply: FastifyReply, @Req() req: FastifyRequest) {
+        const userId = (req as any).user.id;
+        const data = await this.ticketService.markAsResolved(id, userId);
+        return reply.send(new UpdatedResponse({
+            data: data,
+            message: 'Ticket marked as resolved',
         }));
     }
 }

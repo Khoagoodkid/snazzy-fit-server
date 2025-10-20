@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { UserService } from "src/user/user.service";
 import { CreateUserDto } from "src/user/dto/create-user.dto";
-import { BusinessLogicError } from "src/core/base.error";
+import { Api403Error, BusinessLogicError } from "src/core/base.error";
 import { PasswordService } from "src/utils/password.service";
 import { HashService } from "src/utils/hash.service";
 import * as bcrypt from "bcrypt";
@@ -17,6 +17,10 @@ import { GoogleService } from "src/google/google.service";
 import { User } from "@prisma/client";
 import { SendMailService } from "src/send-mail/send-mail.service";
 import { ChangePasswordDto } from "./dto/change-password.dto";
+import * as geoip from 'geoip-lite';
+import { DeviceService } from "src/device/device.service";
+import { LoginAttemptService } from "src/login-attempt/login-attempt.service";
+import { RoleService } from "src/role/role.service";
 
 @Injectable()
 export class AuthService {
@@ -30,6 +34,9 @@ export class AuthService {
         private readonly sanitizeDataService: SanitizeDataService,
         private readonly googleService: GoogleService,
         private readonly sendMailService: SendMailService,
+        private readonly deviceService: DeviceService,
+        private readonly loginAttemptService: LoginAttemptService,
+        private readonly roleService: RoleService,
     ) { }
 
     private async generateToken(user: any, secret: string, expiresIn: string, type: string) {
@@ -37,7 +44,7 @@ export class AuthService {
             id: user.id,
             email: user.email,
             username: user.username,
-            role: user.role,
+            role: user.role.name,
         }
 
         const token = this.jwtService.sign(payload, { secret, expiresIn });
@@ -47,12 +54,13 @@ export class AuthService {
         return { token, expiresAt };
     }
 
-    async login(loginDto: LoginDto, reply: FastifyReply) {
+    async login(loginDto: LoginDto, reply: FastifyReply, ip: string, userAgent: string, deviceId: string, fingerprint: string, behavior: any) {
         // return this.userService.login(email, password);
         const user = await this.userService.findUserByEmail(loginDto.email);
         if (!user) {
             throw new BusinessLogicError("User not found", 401);
         }
+
 
         const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
         if (!isPasswordValid) {
@@ -66,6 +74,58 @@ export class AuthService {
         if (user.status !== 1) {
             throw new BusinessLogicError("User is blocked");
         }
+
+
+        // detect if the login is from a suspicious device
+        const geo = geoip.lookup(ip);
+        console.log("geo", geo);
+        const geoCountry = geo?.country || '';
+        const geoCity = geo?.city || '';
+
+        const riskScore = await this.computeRisk(user.id, {
+            deviceId,
+            geoCountry,
+            geoCity,
+            ipEnrichment: behavior.ipEnrichment,
+        });
+
+        await this.deviceService.upsertDevice({
+            where: { user_id_device_id: { device_id: deviceId || 'unknown', user_id: user.id} },
+            create: {
+                device_id: deviceId || 'unknown',
+                user_id: user.id,
+                fingerprint: fingerprint,
+                ip_address: String(ip),
+                user_agent: userAgent,
+                created_at: TimeService.currentUnix(),
+            },
+            update: {
+                last_seen_at: TimeService.currentUnix(),
+                ip_address: String(ip),
+                user_agent: userAgent,
+                fingerprint: fingerprint
+            },
+        });
+
+        await this.loginAttemptService.createLoginAttempt({
+            user_id: user.id,
+            device_id: deviceId || 'unknown',
+            success: false,
+            geo_country: geoCountry,
+            ip_address: String(ip),
+            geo_city: geoCity,
+            user_agent: userAgent,
+            created_at: TimeService.currentUnix(),
+            fingerprint: fingerprint,
+            ip_enriched: behavior.ipEnrichment,
+        });
+
+        if (riskScore > 6) {
+            console.log("Suspicious login attempt detected");
+            throw new Api403Error("Suspicious login attempt detected");
+        }
+
+
 
         const accessSecret = this.configService.get<string>('ACCESS_TOKEN_SECRET') || "secret";
         const refreshSecret = this.configService.get<string>('REFRESH_TOKEN_SECRET') || "secret";
@@ -116,12 +176,19 @@ export class AuthService {
         const hashedPassword = await this.passwordService.hashPassword(user.password);
         const verify_token = await this.hashService.generateVerfiyToken();
 
+        const userRole = await this.roleService.findByName('USER');
+
+        if (!userRole) {
+            throw new BusinessLogicError("There is an error with the system, please contact the administrator");
+        }
+
         const userData = {
             ...user,
             password: hashedPassword,
             status: 1,
             is_verified: 0,
             verify_token,
+            role_id: userRole.id,
         }
 
         try {
@@ -317,5 +384,16 @@ export class AuthService {
         await this.userService.updateUser({ id: user.id }, { password: hashedPassword, change_password_token: null });
 
         return user;
+    }
+
+    async computeRisk(userId: string, signals: any) {
+        let score = 0;
+        const knownDevice = await this.deviceService.findDevice({ where: { user_id: userId, device_id: signals.deviceId } });
+        if (!knownDevice) score += 3;
+        const last = await this.loginAttemptService.findLoginAttempt({ where: { user_id: userId }, orderBy: { created_at: 'desc' } });
+        if (last && last.geo_country && signals.geoCountry && last.geo_country !== signals.geoCountry) score += 4;
+        if (signals.ipEnrichment?.isProxy) score += 2;
+        // more heuristics...
+        return score;
     }
 }

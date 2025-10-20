@@ -64,7 +64,7 @@ export function middlewareGuard(app: any) {
   });
 
   // Avoid spam request
-//   fastify.use(slowDown({ windowMs: 60000, delayAfter: 50, delayMs: 500 }));
+  //   fastify.use(slowDown({ windowMs: 60000, delayAfter: 50, delayMs: 500 }));
 
   // XSS Protection
   fastify.addHook('onRequest', (request: any, reply: any, done: any) => {
@@ -77,6 +77,16 @@ export function middlewareGuard(app: any) {
         }
       }
     }
+    done();
+  });
+
+  // Extract client IP
+  fastify.addHook('onRequest', (request: any, reply: any, done: any) => {
+    const headers = request.headers;
+    const ipFromHeaders = (headers['x-forwarded-for'] || headers['x-real-ip'] || headers['cf-connecting-ip']) as string | undefined;
+    const ip = ipFromHeaders ? ipFromHeaders.split(',')[0].trim() : (request.ip || request.socket.remoteAddress);
+    request.clientIp = ip;
+
     done();
   });
 }

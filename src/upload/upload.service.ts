@@ -8,14 +8,16 @@ export class UploadService {
    * Upload image from Fastify multipart file object
    * Used in upload controller
    */
- 
 
-  /**
-   * Upload image from buffer
-   * Used for files parsed by ParseMultipartFormInterceptor or direct buffer uploads
-   */
   async uploadImage(file: any, filename: string, folder: string) {
-    const buffer = await file.buffer;
+    // const buffer = await file.buffer;
+    const buffer =
+      file instanceof ArrayBuffer
+        ? Buffer.from(file)
+        : Buffer.isBuffer(file)
+          ? file
+          : Buffer.from(await file.arrayBuffer());
+
     return new Promise<string>((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {

@@ -13,11 +13,14 @@ export class UserRepository {
         return this.prisma.user.findUnique({
             where: {
                 email: email
+            },
+            include: {
+                role: true
             }
         })
     }
 
-    async create(user: CreateUserDto, verify_token: string) {
+    async create(user: any, verify_token: string) {
         return this.prisma.user.create({
             data: {
                 name: user.username,
@@ -25,6 +28,7 @@ export class UserRepository {
                 password: user.password,
                 created_at: TimeService.currentUnix(),
                 verify_token,
+                role_id: user.role_id,
             },
         });
     }
@@ -37,7 +41,7 @@ export class UserRepository {
         });
     }
 
-    async createGoogleUser(email: string, name: string, avatar: string, google_id: string) {
+    async createGoogleUser(email: string, name: string, avatar: string, google_id: string, role_id: string) {
         return this.prisma.user.create({
             data: {
                 email,
@@ -47,6 +51,7 @@ export class UserRepository {
                 created_at: TimeService.currentUnix(),
                 provider: 'google',
                 is_verified: 1,
+                role_id,
             },
         });
     }
@@ -55,6 +60,14 @@ export class UserRepository {
         return this.prisma.user.findUnique({
             where: {
                 id: id
+            }
+        });
+    }
+
+    async findAll() {
+        return this.prisma.user.findMany({
+            include: {
+                role: true
             }
         });
     }

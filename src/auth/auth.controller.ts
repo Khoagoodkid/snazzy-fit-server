@@ -16,8 +16,24 @@ export class AuthController {
     }
 
     @Post('login')
-    async login(@Body() loginDto: LoginDto, @Res() reply: FastifyReply) {
-        const data = await this.authService.login(loginDto, reply);
+    async login(@Body() loginDto: LoginDto, @Res() reply: FastifyReply, @Req() req: FastifyRequest) {
+        console.log("client ip", (req as any).clientIp);
+        console.log("device id", req.headers['x-device-id']);
+        console.log("finger print", req.headers['x-fingerprint']);
+        console.log("user agent", req.headers['user-agent']);
+        // console.log("behavior", JSON.parse(req.headers['x-behavior'] as string));
+        
+        const ip = (req as any).clientIp || req.socket.remoteAddress || '';
+        const userAgent = req.headers['user-agent'] as string || '';
+        const deviceId = req.headers['x-device-id'] as string || '';
+        const fingerprint = req.headers['x-fingerprint'] as string || '';
+        // const behavior = JSON.parse(JSON.stringify(req.headers['x-behavior'] as string));
+        const behavior = {};
+        
+        const data = await this.authService.login(loginDto, reply, ip, userAgent, deviceId, fingerprint, behavior);
+
+    
+
         console.log(loginDto);
         return reply.send(new CreatedResponse({
             data: data,

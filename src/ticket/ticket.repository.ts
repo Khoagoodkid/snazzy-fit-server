@@ -73,6 +73,7 @@ export class TicketRepository {
             include: {
                 user: true,
                 order: true,
+                sessions: true,
             }
         });
     }

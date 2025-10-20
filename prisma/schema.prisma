@@ -19,12 +19,9 @@ model User {
   google_id             String?         @db.VarChar(255)
   is_verified           Int?            @default(0)
   avatar                String?         @db.Text
-  is_onboard            Boolean?        @default(false)
-  blog_id               String?         @db.Char(36)
-  last_receive_message  DateTime?       @db.Timestamp(0)
-  last_active           DateTime?       @db.Timestamp(0)
+  role                  Role            @relation(fields: [role_id], references: [id])
+  role_id               String          @db.VarChar(36)
   is_email_subscribed   Boolean?        @default(false)
-  is_password_set       Boolean?        @default(false)
   status                Int             @default(1) @db.TinyInt
   gender                String?         @db.VarChar(255)
   created_at            BigInt?
@@ -40,15 +37,19 @@ model User {
   orders                Order[]
   addresses             Address[]
   productReviews        ProductReview[]
-  Ticket                Ticket[]
-  Session               Session[]
+  tickets               Ticket[]
+  sessions              Session[]       @relation("user_session")
+  sessions_assistant    Session[]       @relation("assistant_session")
+  devices               Device[]
+  login_attempts        LoginAttempt[]
+  messages              Message[]
 
   @@map("users")
 }
 
 model Token {
   id         String  @id @default(uuid()) @db.Char(36)
-  token      String  @db.VarChar(255)
+  token      String  @db.VarChar(500)
   user_id    String  @db.VarChar(36)
   expires_at BigInt?
   type       String  @db.VarChar(255)
@@ -230,7 +231,7 @@ model ProductReview {
   user_id    String   @db.VarChar(36)
   user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
   variant_id String?  @db.VarChar(36)
-  variant    Variant? @relation(fields: [variant_id], references: [id], onDelete: Cascade)
+  variant    Variant? @relation(fields: [variant_id], references: [id])
   rating     Int      @default(5)
   images     Json?
   comment    String?
@@ -286,16 +287,25 @@ enum TicketPriority {
 }
 
 model Session {
-  id         String        @id @default(uuid()) @db.Char(36)
-  user_id    String?       @db.VarChar(36)
-  user       User?         @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  ticket_id  String?       @db.VarChar(36)
-  ticket     Ticket?       @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
-  source     SessionSource @default(WEB)
-  created_at BigInt?
-  updated_at BigInt?
-  messages   Message[]
+  id                  String        @id @default(uuid()) @db.Char(36)
+  user_id             String?       @db.VarChar(36)
+  user                User?         @relation(name: "user_session", fields: [user_id], references: [id], onDelete: Cascade)
+  ticket_id           String?       @db.VarChar(36)
+  ticket              Ticket?       @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
+  assistant_id        String?       @db.VarChar(36)
+  assistant           User?         @relation(name: "assistant_session", fields: [assistant_id], references: [id], onDelete: Cascade)
+  source              SessionSource @default(WEB)
+  discord_channel_id  String?       @db.VarChar(36)
+  discord_username    String?       @db.VarChar(255)
+  discord_user_avatar String?       @db.VarChar(255)
+  telegram_chat_id    String?       @db.VarChar(36)
+  telegram_username   String?       @db.VarChar(255)
+  telegram_user_avatar String?       @db.VarChar(255)
+  created_at          BigInt?
+  updated_at          BigInt?
+  messages            Message[]
 
+  @@unique([user_id, ticket_id])
   @@index([user_id])
   @@index([ticket_id])
   @@map("sessions")
@@ -303,13 +313,16 @@ model Session {
 
 enum SessionSource {
   WEB
-  API
+  DISCORD
+  TELEGRAM
 }
 
 model Message {
   id               String      @id @default(uuid()) @db.Char(36)
   session_id       String      @db.VarChar(36)
   session          Session     @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  sender_id        String?     @db.VarChar(36)
+  sender           User?       @relation(fields: [sender_id], references: [id], onDelete: Cascade)
   content          String
   media            Json?
   role             MessageRole @default(USER)
@@ -318,6 +331,7 @@ model Message {
   updated_at       BigInt?
 
   @@index([session_id])
+  @@index([sender_id])
   @@map("messages")
 }
 
@@ -325,4 +339,74 @@ enum MessageRole {
   USER
   BOT
   ASSISTANT
+}
+
+model Device {
+  id           String  @id @default(uuid()) @db.Char(36)
+  user_id      String  @db.VarChar(36)
+  user         User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  device_id    String  @db.VarChar(255)
+  fingerprint  String  @db.VarChar(500)
+  ip_address   String  @db.VarChar(255)
+  user_agent   String  @db.VarChar(255)
+  created_at   BigInt?
+  last_seen_at BigInt?
+  updated_at   BigInt?
+
+  @@unique([user_id, device_id])
+  @@index([user_id, device_id])
+  @@map("devices")
+}
+
+model LoginAttempt {
+  id          String  @id @default(uuid()) @db.Char(36)
+  user_id     String  @db.VarChar(36)
+  user        User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  success     Boolean @default(false)
+  ip_address  String  @db.VarChar(255)
+  geo_country String  @db.VarChar(255)
+  geo_city    String  @db.VarChar(255)
+  user_agent  String  @db.VarChar(255)
+  device_id   String  @db.VarChar(255)
+  fingerprint String  @db.VarChar(500)
+  ip_enriched Json?
+  created_at  BigInt?
+
+  @@index([user_id, device_id])
+  @@map("login_attempts")
+}
+
+model Role {
+  id              String           @id @default(uuid()) @db.Char(36)
+  name            String           @unique
+  created_at      BigInt?
+  updated_at      BigInt?
+  rolePermissions RolePermission[]
+  users           User[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id              String           @id @default(uuid()) @db.Char(36)
+  name            String           @unique
+  created_at      BigInt?
+  updated_at      BigInt?
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  id            String     @id @default(uuid()) @db.Char(36)
+  role_id       String     @db.VarChar(36)
+  role          Role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  permission_id String     @db.VarChar(36)
+  status        Int        @default(1)
+  permission    Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
+
+  @@unique([role_id, permission_id])
+  @@index([role_id])
+  @@index([permission_id])
+  @@map("role_permissions")
 }

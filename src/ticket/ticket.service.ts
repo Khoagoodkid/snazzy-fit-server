@@ -1,10 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import { TicketRepository } from "./ticket.repository";
 import { CreateTicketDto } from "./dto/create-ticket.dto";
-import { BusinessLogicError } from "src/core/base.error";
+import { Api403Error, BusinessLogicError } from "src/core/base.error";
 import { UploadService } from "src/upload/upload.service";
 import { UserService } from "src/user/user.service";
 import { UpdateTicketDto } from "./dto/update-ticket.dto";
+import { TicketStatus } from "@prisma/client";
+import { TimeService } from "src/utils/time.service";
 @Injectable()
 export class TicketService {
     constructor(private readonly ticketRepository: TicketRepository, private readonly uploadService: UploadService, private readonly userService: UserService) { }
@@ -49,15 +51,15 @@ export class TicketService {
 
     async getTicketById(id: string, userId: string) {
         try {
+
             const ticket = await this.ticketRepository.findById(id);
             if (!ticket) {
                 throw new BusinessLogicError("Ticket not found");
             }
 
             if (ticket.user_id !== userId) {
-                throw new BusinessLogicError("You are not authorized to get this ticket");
+                throw new Api403Error("You are not authorized to get this ticket");
             }
-
             return ticket;
         } catch (error) {
             throw new BusinessLogicError("Failed to get ticket");
@@ -65,15 +67,15 @@ export class TicketService {
     }
 
     async updateTicket(id: string, data: UpdateTicketDto, userId: string) {
-        try {
-            const ticket = await this.ticketRepository.findById(id);
-            if (!ticket) {
-                throw new BusinessLogicError("Ticket not found");
-            }
+        const ticket = await this.ticketRepository.findById(id);
+        if (!ticket) {
+            throw new BusinessLogicError("Ticket not found");
+        }
 
-            if (ticket.user_id !== userId) {
-                throw new BusinessLogicError("You are not authorized to update this ticket");
-            }
+        if (ticket.user_id !== userId) {
+            throw new Api403Error("You are not authorized to update this ticket");
+        }
+        try {
 
             let images: string[] | null = null;
             if (data.files && data.files.length > 0) {
@@ -98,19 +100,47 @@ export class TicketService {
     }
 
     async deleteTicket(id: string, userId: string) {
-        try {
-            const ticket = await this.ticketRepository.findById(id);
-            if (!ticket) {
-                throw new BusinessLogicError("Ticket not found");
-            }
+        const ticket = await this.ticketRepository.findById(id);
+        if (!ticket) {
+            throw new BusinessLogicError("Ticket not found");
+        }
 
-            if (ticket.user_id !== userId) {
-                throw new BusinessLogicError("You are not authorized to delete this ticket");
-            }
+        if (ticket.user_id !== userId) {
+            throw new BusinessLogicError("You are not authorized to delete this ticket");
+        }
+        try {
 
             return this.ticketRepository.delete(id);
         } catch (error) {
             throw new BusinessLogicError("Failed to delete ticket");
+        }
+    }
+
+    async getAllTickets() {
+        try {
+            return this.ticketRepository.findAll({});
+        } catch (error) {
+            throw new BusinessLogicError("Failed to get all tickets");
+        }
+    }
+
+    async markAsResolved(id: string, userId: string) {
+        const ticket = await this.ticketRepository.findById(id);
+        if (!ticket) {
+            throw new BusinessLogicError("Ticket not found");
+        }
+        try {
+
+            // if (ticket.user_id !== userId) {
+            //     throw new Api403Error("You are not authorized to mark this ticket as resolved");
+            // }
+
+            return this.ticketRepository.update(id, {
+                status: TicketStatus.RESOLVED,
+                resolved_at: TimeService.currentUnix(),
+            });
+        } catch (error) {
+            throw new BusinessLogicError("Failed to mark ticket as resolved");
         }
     }
 }

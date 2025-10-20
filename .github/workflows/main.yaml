@@ -37,6 +37,7 @@ jobs:
             cd /root/services/snazzy-fit-server
             git fetch origin
             git checkout main
+            git reset --hard origin/main
             git pull origin main
 
       - name: Import GPG key and decrypt env

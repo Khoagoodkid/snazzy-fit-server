@@ -12,7 +12,7 @@ import { SerializeService } from 'src/utils/serialize.service';
 import { DiscordService } from 'src/discord/discord.service';
 export const ASSISTANT_ROOM = "ASSISTANT";
 
-@WebSocketGateway(8001, {
+@WebSocketGateway({
     namespace: 'chat',
     transports: ['websocket'],
 })

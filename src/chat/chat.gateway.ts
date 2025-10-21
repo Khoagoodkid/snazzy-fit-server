@@ -14,7 +14,12 @@ export const ASSISTANT_ROOM = "ASSISTANT";
 
 @WebSocketGateway({
     namespace: 'chat',
-    transports: ['websocket'],
+    transports: ['websocket', 'polling'], // Add polling as fallback
+    cors: {
+        origin: true, // Allow all origins, or specify your frontend URL
+        credentials: true,
+        methods: ['GET', 'POST'],
+    },
 })
 export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
     private server: Server;

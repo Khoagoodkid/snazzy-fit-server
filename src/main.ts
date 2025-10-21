@@ -13,8 +13,17 @@ import { middlewareGuard } from './config/middleware.guard';
 
 
 async function bootstrap() {
+  const fastifyAdapter = new FastifyAdapter();
+  
+  // Configure raw WebSocket support for Socket.IO
+  fastifyAdapter.getInstance().addHook('onRequest', (request: any, reply: any, done: any) => {
+    reply.header('Access-Control-Allow-Origin', request.headers.origin || '*');
+    reply.header('Access-Control-Allow-Credentials', 'true');
+    done();
+  });
+
   const app = await NestFactory.create<NestFastifyApplication>
-    (AppModule, new FastifyAdapter());
+    (AppModule, fastifyAdapter);
   const configService = app.get(ConfigService);
 
   // Add raw body to request for Stripe webhooks

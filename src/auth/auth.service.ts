@@ -272,11 +272,11 @@ export class AuthService {
 
             const user = await this.userService.findUserByEmail(userInfo.data.email as string);
 
-            let userData: User;
+            let userData: User | null;
 
             if (!user) {
                 userData = await this.userService.createGoogleUser(userInfo.data.email as string, userInfo.data.name as string, userInfo.data.picture as string, userInfo.data.id as string);
-
+                userData = await this.userService.findUserByEmail(userInfo.data.email as string);
             } else {
                 userData = user;
             }
